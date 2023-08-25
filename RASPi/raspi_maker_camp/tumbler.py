@@ -21,12 +21,24 @@ class Tumbler:
         
         # Menu status
         self.status_main = 1
-        self.status_accep = -1
+        self.status_accept = -1
         self.status_next = -1
 
     def printLCD(self, cursor: int = 0, text: str = ""):
         lcd_cell = 16
         text_len = len(text)
+        gap_1 = gap_2 = ""
+        
+        if text_len % 2 == 1 and lcd_cell > text_len:
+            gap_1 = lcd_cell - text_len
+            gap_2 = " " * (int(gap_1/2) + 1)
+            gap_1 = " " * int(gap_1/2)
+        elif lcd_cell >= text_len:
+            gap_1 = lcd_cell - text_len
+            gap_1 = " " * int(gap_1/2)
+            
+        text = gap_1 + text + gap_2
+        
         self.lcd.setCursor(0, cursor)
         self.lcd.print(text)
 
@@ -48,11 +60,18 @@ class Tumbler:
         distance = rtTotime * (34000 / 2)
         
         return distance
+    
+    def waterCheck(self, distance) -> float:
+        PI = 3.14
+        RADIUS = 4.72
+        HEIGHT = 15.5
+        water = (HEIGHT-distance)*(RADIUS**2)*PI
+        return water
         
     def menuSelect(self):
-        if self.status_accep == 0:
+        if self.status_accept == 0:
             print(0)
-        elif self.status_accep == 1:
+        elif self.status_accept == 1:
             print(1)
             
     def mainControl(self):
@@ -73,23 +92,23 @@ class Tumbler:
         status_4_down_1 = " o yes  |   no"
         status_4_down_2 = "   yes  | o no"
         
-        if self.status_main == 1 and self.status_next < 1 and self.status_accep < 1:
+        if self.status_main == 1 and self.status_next < 1 and self.status_accept < 1:
             return (basic_up, basic_down)
         
-        elif self.status_next <= 1 and self.status_accep <= 1 and self.status_main == 1:
+        elif self.status_next <= 1 and self.status_accept <= 1 and self.status_main == 1:
             self.status_main = 2
-            self.status_next = self.status_accep = 0
+            self.status_next = self.status_accept = 0
         
             return (status_2_up, self.coffee_text()[0])
         
-        elif self.status_next >= 0 and self.status_main == 2 and self.status_accep == 0:
+        elif self.status_next >= 0 and self.status_main == 2 and self.status_accept == 0:
             text_coffee = self.coffee_text(self.status_next)[0]
             text_coffee = "o  " + text_coffee + "  o"
         
             return (status_2_up, text_coffee)
         
-        elif self.status_accep >= 1 and self.status_main == 2:
-            self.status_accep = 0
+        elif self.status_accept < 1 and self.status_next < 1 and self.status_main <= 3:
+            self.status_accept = 0
             self.status_next = 0
             self.status_main = 3
             text_coffee = self.coffee_text(self.status_next)
@@ -98,26 +117,33 @@ class Tumbler:
         
             return (status_3_up, basic_down)
         
-        elif self.status_accep >= 1 and self.status_main == 3:
+        elif self.status_accept >= 1 and self.status_main == 3:
             self.status_main = 4
-            
+            self.status_next = self.status_accept = 0
             return (status_4_up, status_4_down_1)
         
-        elif self.status_next % 2 == 0 and self.status_main == 4 and self.status_accep == 0:
+        elif self.status_next % 2 == 0 and self.status_main == 3 and self.status_accept == 0:
             return (status_4_up, status_4_down_2)
         
-        elif self.status_next % 2 != 0 and self.status_main == 4 and self.status_accep == 0:
+        elif self.status_next % 2 != 0 and self.status_main == 3 and self.status_accept == 0:
             return (status_4_up, status_4_down_1)
         
-        elif self.status_main == 4 and self.status_accep >= 1:
+        elif self.status_next % 2 == 0 and self.status_main == 3 and self.status_accept >= 1:
             self.status_main = 1
             self.status_next = 0
-            self.status_accep = 0
+            self.status_accept = 0
             
             return (basic_up, basic_down)
+        
+        elif self.status_next % 2 != 0 and self.status_main == 4 and self.status_accept >= 1:
+            self.status_main = 2
+            self.status_next = 0
+            self.status_accept = 0
+            
+            return (status_3_up, basic_down)
         else:
             
-            return (str(self.status_accep), str(self.status_main))         
+            return ("error : accept - "+str(self.status_accept), "main - "+str(self.status_main))         
     
     def coffee_text(self, menu: int = 0):
         """숫자에 따른 커피명과 카페인 함량을 반환합니다
@@ -148,20 +174,20 @@ class Tumbler:
 if __name__ == "__main__":
     tumbler = Tumbler()
 
-    dump_data_left = 0
-    dump_data_right = 0
+    next_dump = 0
+    accept_dump = 0
     
     input_next = GPIO.input(tumbler.down_pin_left)
-    test_input_data_right = GPIO.input(tumbler.down_pin_right)
+    input_accept = GPIO.input(tumbler.down_pin_right)
     
     try:
         # get button status
         while True:
             input_next = GPIO.input(tumbler.down_pin_left)
-            test_input_data_right = GPIO.input(tumbler.down_pin_right)
+            input_accept = GPIO.input(tumbler.down_pin_right)
             
-            if input_next != dump_data_left:
-                print("click left button!", input_next)
+            if input_next != next_dump:
+                print("click next button!", input_next, " | next: ", tumbler.status_next, " | main: ",tumbler.status_main, " | accept: ",tumbler.status_accept)
                 tumbler.status_next += 1
             
             text_left = tumbler.mainControl()
@@ -170,13 +196,13 @@ if __name__ == "__main__":
             tumbler.printLCD(cursor=1, text=text_left[1])
             
             
-            if test_input_data_right != dump_data_right:
-                print("click right button!", test_input_data_right)
-                tumbler.status_accep += 1
+            if input_accept != accept_dump:
+                print("click accept button!", input_accept, " | next: ", tumbler.status_next, " | main: ",tumbler.status_main, " | accept: ",tumbler.status_accept)
+                tumbler.status_accept += 1
 
             # save button status
-            dump_data_left = input_next
-            dump_data_right = test_input_data_right
+            next_dump = input_next
+            accept_dump = input_accept
             
             text_left = tumbler.mainControl()
             
