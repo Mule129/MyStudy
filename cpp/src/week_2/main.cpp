@@ -3,11 +3,11 @@
 using namespace std;
 
 void game(string);
+string random(int);
 
 int main() {
-    string number;
-    cout << "Enter a answer: ";
-    cin >> number;
+    string number = random(3);
+    cout << "Enter is " << number << endl;
 
     game(number);
 

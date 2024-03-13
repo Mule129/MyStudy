@@ -12,19 +12,17 @@ int game(string number) {
     cout << "Enter a guess: ";
     cin >> inputValue;
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < number.length(); i++) {
+        for (int j = 0; j < number.length(); j++) {
             if (number[i] == inputValue[j] && i == j) {
                 strikes ++;
             } else if (number[i] == inputValue[j]) {
                 balls ++;
             }
-            
-            
         }
     }
 
-    if (strikes != 3) {
+    if (strikes != number.length()) {
         cout << "Strikes: " << strikes << ", Balls: " << balls << endl;
         strikes = 0;
         balls = 0;
