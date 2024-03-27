@@ -1,6 +1,6 @@
 int game();
 
 int main() {
-    int status = game();
-    return status;
+    int client = game();
+    return client;
 }
