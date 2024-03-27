@@ -165,7 +165,7 @@ void wait() {
   if (startTime.time_since_epoch().count() == 0)
     startTime = std::chrono::system_clock::now();
   frame += 1;
-  auto nextFrame = startTime + std::chrono::milliseconds(frame * 1000 / 60);  // frame
+  auto nextFrame = startTime + std::chrono::milliseconds(frame * 1000 / 60);
   auto sleepTime = nextFrame - std::chrono::system_clock::now();
   if (sleepTime.count() > 0) {
     console::sleep(
@@ -243,18 +243,6 @@ void draw(int x, int y, String s) { draw(x, y, s.c_str()); }
 void clear() {
   for (int i = 0; i < SCREEN_WIDTH; i++) {
     for (int j = 0; j < SCREEN_HEIGHT; j++) {
-      draw(i, j, " ");
-    }
-  }
-}
-
-void clear(int x, int y) {
-  draw(x, y, " ");
-}
-
-void clear(int x_1, int x_2, int y_1, int y_2) {
-  for (int i = x_1; i < x_2; i++) {
-    for (int j = y_1; j < y_2; j++) {
       draw(i, j, " ");
     }
   }

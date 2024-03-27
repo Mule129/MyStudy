@@ -26,8 +26,6 @@ void draw(int x, int y, std::string s);
 // 화면에 그려진 것을 전부 지운다.
 // 필요에 따라 각 게임 루프의 시작 부분에서 호출 할 수 있다.
 void clear();
-void clear(int x, int y);
-void clear(int x_1, int x_2, int y_1, int y_2);
 
 // K_LEFT: 왼쪽 방향키
 // K_RIGHT: 오른쪽 방향키

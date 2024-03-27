@@ -1,8 +1,6 @@
-#include <string>
-#include <random>
-#include <time.h>
-#include <iostream>
-
+#include <cstring>
+#include <cstdlib>
+#include <ctime>
 #include "console.h"
 
 #define BOARD_SIZE 20
@@ -17,205 +15,265 @@
 #define SNAKE_BODY_STRING "■"
 #define APPLE_STRING "●"
 
-int randInt(int min, int max);
+#define LOST_COMMENT1 "YOU LOST!"
+#define LOST_COMMENT2 "Try again? (Enter)"
 
-int x, y;
-int tailX, tailY;
-int appleX;
-int appleY;
-int score;
-int werstInput;
-int snakeArrayX[BOARD_SIZE] = {0};
-int snakeArrayY[BOARD_SIZE] = {0};
-// int snakeNotArray[BOARD_SIZE*BOARD_SIZE][1] = {0};
-int snakeLength;
+struct PositionInfo {
+    int x;
+    int y;
 
+    bool operator==(const PositionInfo &other) {
+        return this->x == other.x && this->y == other.y;
+    }
+};
 
-int handleInput() {
-    if (console::key(console::K_UP)) {
-        werstInput = 1;
-        return 1;
-    } 
-    if (console::key(console::K_DOWN)) {
-        werstInput = -1;
-        return -1;
-    } 
-    if (console::key(console::K_LEFT)) {
-        werstInput = -2;
-        return -2;
-    } 
-    if (console::key(console::K_RIGHT)) {
-        werstInput = 2;
-        return 2;
+enum GameState {
+    PLAYING,
+    OVER
+};
+
+PositionInfo snakePosition;
+PositionInfo applePosition;
+
+console::Key recentHandleInput = console::K_NONE; // -1: pending
+int score = 0;
+
+PositionInfo recentSnakePosition[BOARD_SIZE * BOARD_SIZE] = {};
+
+PositionInfo randomAppleList[BOARD_SIZE * BOARD_SIZE] = {};
+
+console::Key handleInput(GameState state) {
+    // 키 입력 상태를 받는다.
+    switch (state) {
+        case PLAYING:
+            if (console::key(console::K_LEFT) && (recentHandleInput != console::K_RIGHT || score == 0)) {
+                recentHandleInput = console::K_LEFT;
+            }
+            if (console::key(console::K_RIGHT) && (recentHandleInput != console::K_LEFT || score == 0)) {
+                recentHandleInput = console::K_RIGHT;
+            }
+            if (console::key(console::K_UP) && (recentHandleInput != console::K_DOWN || score == 0)) {
+                recentHandleInput = console::K_UP;
+            }
+            if (console::key(console::K_DOWN) && (recentHandleInput != console::K_UP || score == 0)) {
+                recentHandleInput = console::K_DOWN;
+            }
+            break;
+        case OVER:
+            if (console::key(console::K_ENTER)) {
+                recentHandleInput = console::K_ENTER;
+            }
+            break;
     }
     if (console::key(console::K_ESC)) {
-        werstInput = 0;
-        return 0;
+        recentHandleInput = console::K_ESC;
     }
-    if (console::key(console::K_ENTER)) {
-        werstInput = 10;
-        return 10;
+    return recentHandleInput;
+}
+
+void restrictInScreen() {
+    // x, y 위치를 화면의 최대 크기에서 벗어나지 않게 한다.
+    if (snakePosition.x < 0)
+        snakePosition.x = 0;
+    if (snakePosition.x >= console::SCREEN_WIDTH)
+        snakePosition.x = console::SCREEN_WIDTH - 1;
+    if (snakePosition.y < 0)
+        snakePosition.y = 0;
+    if (snakePosition.y >= console::SCREEN_HEIGHT)
+        snakePosition.y = console::SCREEN_HEIGHT - 1;
+}
+
+void followSnakePosition() {
+    // 뱀의 이전 위치 정보를 저장한다.
+    for (int i = 0; i < score; i++) {
+        recentSnakePosition[score - i].x = recentSnakePosition[score - 1 - i].x;
+        recentSnakePosition[score - i].y = recentSnakePosition[score - 1 - i].y;
     }
 
-    return werstInput;
+    recentSnakePosition[0] = snakePosition;
 }
 
-void screenCleaer() {
-    console::clear(1, console::SCREEN_WIDTH-1, 1, console::SCREEN_HEIGHT-1);
-}
-
-
-
-void _apple() {
-    appleX = randInt(1, BOARD_SIZE-1);
-    appleY = randInt(1, BOARD_SIZE-1);
-    console::draw(appleX, appleY, APPLE_STRING);
-}
-
-void eatApple() {
-    snakeLength++;
-    score += 10;
-    console::draw(appleX, appleY, SNAKE_BODY_STRING);
-    _apple();
+// change apple postion
+void placeApple() {
+    int index = 0;
+    int data[BOARD_SIZE][BOARD_SIZE] = {0};
     
-}
-
-void _snakePositionSave(int x, int y, int snakeLength) {
-    if (snakeLength = 1) {
-        snakeArrayX[0] = x;
-        snakeArrayY[0] = y;
-        tailX = x;
-        tailY = y;
-    } else {
-        for (int i = snakeLength - 1; i >= 0; i--) {
-            snakeArrayX[i+1] = snakeArrayX[i];
-            snakeArrayY[i+1] = snakeArrayY[i];
+    for (int i = 0; i < score; i++) {
+        data[recentSnakePosition[i].x][recentSnakePosition[i].y] = 1;
+    }
+    for (int i = 1; i < BOARD_SIZE; i++) {
+        for (int j = 1; j < BOARD_SIZE; j++) {
+            if (data[i][j] != 1) {
+                randomAppleList[index].x = i;
+                randomAppleList[index].y = j;
+                index++;
+            }
         }
-        tailX = snakeArrayX[snakeLength-1];
-        tailY = snakeArrayY[snakeLength-1];
     }
-
-    std::cout << snakeArrayX[1];
-
-    snakeArrayX[0] = x;
-    snakeArrayY[0] = y;
-    
+    applePosition = {
+        randomAppleList[rand() % (index - 1)].x,
+        randomAppleList[rand() % (index - 1)].y
+    };
 }
 
-void initGameSetting() {
-    x = BOARD_SIZE/2;
-    y = BOARD_SIZE/2;
-    
-    snakeLength = 1;
-    _snakePositionSave(x, y, snakeLength);
+/* 출력 함수 모음 */
+void printApple() {
+    // 사과를 배치한다.
+    console::draw(applePosition.x, applePosition.y, APPLE_STRING);
+}
 
-    score = 0;
-    _apple();
+void printSnake() {
+    // 뱀을 배치한다.
+    for (int i = 0; i < score + 1; i++) {
+        console::draw(recentSnakePosition[i].x, recentSnakePosition[i].y, SNAKE_BODY_STRING);
+    }
+}
 
-    werstInput = 2;
+void clearScreen(int x_1 = 1, int x_2 = BOARD_SIZE, int y_1 = 1, int y_2 = BOARD_SIZE) {
+    for (int i = x_1; i < x_2; i++) {
+        for (int j = y_1; j < y_2; j++) {
+            console::draw(i, j, " ");
+        }
+    }
+}
 
+// 화면의 프레임을 출력한다.
+void printFrame() {
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        console::draw(i, 0, WALL_HORIZONTAL_STRING);
+        console::draw(i, BOARD_SIZE, WALL_HORIZONTAL_STRING);
+    }
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        console::draw(0, i, WALL_VERTICAL_STRING);
+        console::draw(BOARD_SIZE, i, WALL_VERTICAL_STRING);
+    }
     console::draw(0, 0, WALL_LEFT_TOP_STRING);
     console::draw(BOARD_SIZE, BOARD_SIZE, WALL_RIGHT_BOTTOM_STRING);
     console::draw(0, BOARD_SIZE, WALL_LEFT_BOTTOM_STRING);
     console::draw(BOARD_SIZE, 0, WALL_RIGHT_TOP_STRING);
-
-    console::draw(x, y, SNAKE_STRING);
 }
 
-bool snakeHeadCheck(int x, int y) {
-    if (x >= BOARD_SIZE || y >= BOARD_SIZE || x <= 0 || y <= 0) {
-        console::draw(
-            BOARD_SIZE/2 - 4, BOARD_SIZE/2, "YOU LOST!"
-        );
-        console::draw(
-            BOARD_SIZE/2 - 9, BOARD_SIZE/2+1, "Try again? (Enter)"
-        );
-        return true;
-    } else if (x == appleX && y == appleY) {
-        eatApple();
-    } else {
-        for (int i = 1; i < snakeLength; i++) {
-            for (int j = 1; j < snakeLength; j++) {
-                if (snakeArrayX[i] == x && snakeArrayY[i] == y) {
-                    console::draw(
-                        BOARD_SIZE/2 - 4, BOARD_SIZE/2, "YOU LOST!"
-                    );
-                    console::draw(
-                        BOARD_SIZE/2 - 9, BOARD_SIZE/2+1, "Try again? (Enter)"
-                    );
-                    console::draw(
-                        BOARD_SIZE/2 - 4, BOARD_SIZE/2+2,
-                        std::to_string(snakeArrayX[i])
-                    );
-                    return true;
-                }
-            }
-        }
-    }
 
-    _snakePositionSave(x, y, snakeLength);
-    
+void printText() {
+
+    // 정보
+    // console::draw(0, BOARD_SIZE + 1, "x: " + std::to_string(x));
+    // console::draw(0, BOARD_SIZE + 2, "y: " + std::to_string(y));
+    console::draw(
+            (BOARD_SIZE / 2) - ("score: " + std::to_string(score*10)).length() / 2,
+            BOARD_SIZE + 1,
+            "score: " + std::to_string(score*10)
+    );
+    // for (int i = 0; i < score; i ++) {
+    //     console::draw(0, BOARD_SIZE + i + 5, "snake position (X): " + std::to_string(snakePosition[i][0]));
+    // }
+}
+
+/* 게임 종료 조건 함수 모음 */
+bool isRestrict() {
+    // 뱀이 게임 밖으로 탈출했는가?
+    return snakePosition.x == 0 ||
+           snakePosition.y == 0 ||
+           snakePosition.x >= BOARD_SIZE ||
+           snakePosition.y >= BOARD_SIZE;
+}
+
+bool isCrash() {
+    // 뱀이 충돌했는가?
+    for (int i = 1; i < score + 1; i++) {
+        if (snakePosition == recentSnakePosition[i])
+            return true;
+    }
     return false;
 }
 
+void initialization() {
+    // 게임 초기 설정
+    console::clear();
+    snakePosition.x = BOARD_SIZE / 2;
+    snakePosition.y = BOARD_SIZE / 2;
+    score = 0;
+    recentHandleInput = console::K_RIGHT;
 
-int game() {
-    int delayCnt = 0;
-    bool lossGame = false;
-    std::string scoreText = "score: ";
+    placeApple();
+    followSnakePosition();
 
+    printFrame();
+
+}    
+
+void game() {
+    int tickRate = 0;
+    console::Key inputKey;
+
+    GameState state = PLAYING;
+    srand(time(NULL));
+
+    // 콘솔 라이브러리를 초기화한다.
     console::init();
-    console::clear(1, 1, BOARD_SIZE-1, BOARD_SIZE-1);
 
-    initGameSetting();
+    initialization();
 
     while (true) {
-        console::clear(tailX, tailY);
+        clearScreen();
+        inputKey = handleInput(state);
 
-        int status = handleInput();
+        if (state == PLAYING) {
+            if (tickRate >= MOVE_DELAY) {
+                tickRate = 0;
 
-        if (status == 0) {
+                if (inputKey == console::K_LEFT) {
+                    snakePosition.x--;
+                } else if (inputKey == console::K_RIGHT) {
+                    snakePosition.x++;
+                } else if (inputKey == console::K_UP) {
+                    snakePosition.y--;
+                } else if (inputKey == console::K_DOWN) {
+                    snakePosition.y++;
+                }
+                restrictInScreen();
+                followSnakePosition();
+
+                // 점수 or 게임 오버 부분
+                if (applePosition == snakePosition) {
+                    score++;
+                    placeApple();
+                }
+
+                if (isCrash() || isRestrict()) {
+                    state = OVER;
+                }
+            }
+            tickRate++;
+        } else if (state == OVER) {
+            console::draw(
+                    BOARD_SIZE / 2 - strlen(LOST_COMMENT1) / 2,
+                    BOARD_SIZE / 2,
+                    LOST_COMMENT1
+            );
+            console::draw(
+                    BOARD_SIZE / 2 - strlen(LOST_COMMENT2) / 2,
+                    BOARD_SIZE / 2 + 1,
+                    LOST_COMMENT2
+            );
+
+            if (inputKey == console::K_ENTER) {
+                initialization();
+                state = PLAYING;
+            }
+        }
+
+        // Exit game
+        if (inputKey == console::K_ESC) {
             break;
-        } else if (status == 10 && lossGame) {
-            console::clear();
-            initGameSetting();
-            lossGame = false;
-            score = 0;
         }
 
-        if (lossGame) {
-            ;
-        } else if (delayCnt < MOVE_DELAY) {
-            delayCnt++;
-        } else if (status == 2) {
-            delayCnt = 0;
-            x++;
-        } else if (status == -2) {
-            delayCnt = 0;
-            x--;
-        } else if (status == 1) {
-            delayCnt = 0;
-            y--;
-        } else if (status == -1) {
-            delayCnt = 0;
-            y++;
-        }
+        // 출력 부분
+        printApple();
+        printSnake();
+        printText();
         
-        lossGame = snakeHeadCheck(x, y);
-        console::draw(x, y, SNAKE_BODY_STRING);
-        
-        console::draw(0, BOARD_SIZE + 1, "x: " + std::to_string(x));
-        console::draw(0, BOARD_SIZE + 2, "y: " + std::to_string(y));
-        console::draw(0, BOARD_SIZE + 4, "sanke: " + std::to_string(tailX));
-        console::draw(
-            (BOARD_SIZE / 2) - (scoreText + std::to_string(score)).length()/2, 
-            BOARD_SIZE + 1, 
-            "score: " + std::to_string(score)
-        );
-
-        
+        // 화면을 갱신하고 다음 프레임까지 대기한다.
         console::wait();
-    }   
-
-    return 0;
+    }
 }
