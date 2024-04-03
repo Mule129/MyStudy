@@ -8,23 +8,21 @@
 enum Type { INT, DOUBLE, STRING, ARRAY };
 
 struct Array {
-  int size;
-  Type type;
-  void *items;
+    int size;
+    Type type;
+    void *items;
 };
 
 struct Entry {
-  Type type;
-  std::string key;
-  void *value;
+    Type type;
+    std::string key;
+    void *value;
 };
 
 struct Database {
-  Entry entry[DEFALTSIZE];
-  
-  void add(Entry *entry) {
-
-  }
+    Entry **entry;
+    int index;
+    int maxSize;
 };
 
 // 엔트리를 생성한다.
