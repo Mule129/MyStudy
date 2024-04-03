@@ -7,65 +7,110 @@
 //     return value;
 // }
 
+void arrayPrint(Array* array) {
+    std::cout << "[";
+    switch (array->type)
+    {
+        case INT:
+            for (int i = 0; i < array->size -1; i++) {
+                std::cout << (static_cast<int*>(array->items)[i]) << ", ";
+            }
+            std::cout << (static_cast<int*>(array->items)[array->size-1]);
+            break;
+        case DOUBLE:
+            for (int i = 0; i < array->size -1; i++) {
+                std::cout << (static_cast<double*>(array->items)[i]) << ", ";
+            }
+            std::cout << (static_cast<double*>(array->items)[array->size-1]);
+            break;
+        case STRING:
+            for (int i = 0; i < array->size -1; i++) {
+                std::cout << (static_cast<std::string*>(array->items)[i]) << ", ";
+            }
+            std::cout << (static_cast<std::string*>(array->items)[array->size-1]);
+            break;
+        case ARRAY:
+            for (int i = 0; i < array->size -1; i++) {
+                arrayPrint(&(static_cast<Array*>(array->items)[i]));
+                std::cout << ", ";
+            }
+            arrayPrint(&(static_cast<Array*>(array->items)[array->size-1]));
+            break;
+    }
+    std::cout << "]";
+}
+
 void getAllData(Database &database) {
     for (int i = 0; i < database.index; i++) {
-        switch (database.entry[i]->type) {
+        switch (database.entrys[i]->type) {
             case INT:
-                std::cout << database.entry[i]->key << ": " << *((int*)database.entry[i]->value) << std::endl;
+                std::cout << database.entrys[i]->key << ": " << *((int*)database.entrys[i]->value) << std::endl;
                 break;
             case DOUBLE:
-                std::cout << database.entry[i]->key << ": " << *(double*)(database.entry[i]->value) << std::endl;
+                std::cout << database.entrys[i]->key << ": " << *(double*)(database.entrys[i]->value) << std::endl;
                 break;
             case STRING:
-                std::cout << database.entry[i]->key << ": " << *(std::string*)(database.entry[i]->value) << std::endl;
+                std::cout << database.entrys[i]->key << ": " << *(std::string*)(database.entrys[i]->value) << std::endl;
                 break;
             case ARRAY:
-                std::cout << database.entry[i]->key << ": " << (Array*)(database.entry[i]->value) << std::endl;
+                std::cout << database.entrys[i]->key << ": " ;
+                arrayPrint((static_cast<Array*>(database.entrys[i]->value)));
+                std::cout << std::endl;
                 break;
         }
     }
 }
 
-Array *addArray(Array *array = new Array) {
+Array *addArray(Array *array = new Array()) {
     std::string type;
+    void* value;
     std::cout << "type (int, double, string, array): ";
     std::cin >> type;
     std::cout << "size: ";
     std::cin >> array->size;
     
     if (type == "int") {
-        int dump[array->size];
+        int* dump = new int[array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: " ;
-            std::cin >> dump[i];
+            value = new int;
+            std::cin >> *(static_cast<int*>(value));
+            dump[i] = *((int*)value);
         }
         array->items = dump;
     } else if (type == "double") {
-        double dump[array->size];
+        double* dump = new double[array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: " ;
-            std::cin >> dump[i];
+            value = new double;
+            std::cin >> *(static_cast<double*>(value));
+            dump[i] = *((double*)value);
         }
         array->items = dump;
     } else if (type == "string") {
-        std::string dump[array->size];
+        std::string* dump = new std::string[array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: " ;
-            std::cin >> dump[i];
+            value = new std::string;
+            std::cin.ignore();
+            std::getline(std::cin, *(static_cast<std::string*>(value)));
+            dump[i] = *((std::string*)value);
         }
         array->items = dump;
     } else if (type == "array") {
+        Array* dump = new Array[array->size];
         for (int i = 0; i < array->size; i++) {
             std::cout << "item[" << i << "]: " ;
             
-            void *dump = addArray();
+            Array *newArray = addArray();
 
-            if (dump == nullptr) {
+            if (newArray == nullptr) {
                 std::cout << "invalid type";
             } else {
-                array->items = dump;
+                dump[i] = *((Array*)newArray);
             }
         }
+        array->items = dump;
     } else {
         return nullptr;
     }
@@ -77,6 +122,8 @@ Array *addArray(Array *array = new Array) {
 void addData(Database &database) {
     std::string key;
     std::string type;
+
+    void* value;
     
 
     std::cout << "key: ";
@@ -87,28 +134,28 @@ void addData(Database &database) {
     std::cout << "Value: ";
 
     if (type == "int") {
-        int value;
-        std::cin >> value;
-        add(database, create(INT, key, &value));
-
-        std::cout << "database pointer: " << database.entry[0]->value << std::endl;
-        std::cout << "database pointer: " << *((int*)database.entry[0]->value) << std::endl;
+        value = new int;
+        std::cin >> *(static_cast<int*>(value));
+        add(database, create(INT, key, value));
     } else if (type == "double") {
-        double value;
-        std::cin >> value;
-        add(database, create(DOUBLE, key, &value));
+        value = new double;
+        std::cin >> *(static_cast<double*>(value));
+        add(database, create(DOUBLE, key, value));
     } else if (type == "string") {
-        std::string value;
-        std::cin >> value;
-        add(database, create(STRING, key, &value));
+        value = new std::string;
+        std::cin.ignore();
+        std::getline(std::cin, *(static_cast<std::string*>(value)));
+        add(database, create(STRING, key, value));
     } else if (type == "array") {
         Array *array = new Array;
         array = addArray(array);
         if (array == nullptr) {
             std::cout << "invalid type";
         } else {
-            add(database, create(ARRAY, key, &array));
+            add(database, create(ARRAY, key, array));
         }
+    } else {
+        std::cout << "invalid type";
     }
     return;
 }
@@ -125,12 +172,8 @@ void commandMode(Database &database) {
 
         if (command == "list") {
             getAllData(database);
-            std::cout << "database pointer: " << database.entry[0]->value << std::endl;
-            std::cout << "database pointer: " << *((int*)database.entry[0]->value) << std::endl;
         } else if (command == "add") {
             addData(database);
-            std::cout << "database pointer(command): " << database.entry[0]->value << std::endl;
-            std::cout << "database pointer(command): " << *((int*)database.entry[0]->value) << std::endl;
         } else if (command == "get") {
             std::cout << "key: ";
             std::cin >> key;
@@ -138,8 +181,23 @@ void commandMode(Database &database) {
             if (data == nullptr) {
                 std::cout << "not found";
             } else {
-                std::cout << data->key << ": " << *((int*)data->value) << std::endl;
-                // TODO: type checking for output value
+                switch (data->type)
+                {
+                case INT:
+                    std::cout << data->key << ": " << *((int*)data->value) << std::endl;
+                    break;
+                case DOUBLE:
+                    std::cout << data->key << ": " << *((double*)data->value) << std::endl;
+                    break;
+                case STRING:
+                    std::cout << data->key << ": " << *((std::string*)data->value) << std::endl;
+                    break;
+                case ARRAY:
+                    std::cout << data->key << ": " << ((Array*)data->value) << std::endl;
+                    break;
+                default:
+                    break;
+                }
             }
         } else if (command == "del") {
             std::cout << "key: ";

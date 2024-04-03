@@ -20,7 +20,7 @@ struct Entry {
 };
 
 struct Database {
-    Entry **entry;
+    Entry **entrys;
     int index;
     int maxSize;
 };
