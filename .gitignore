@@ -2,3 +2,4 @@
 *.exe
 *.json
 .vscode/
+cpp/snake_old/*
