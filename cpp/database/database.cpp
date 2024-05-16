@@ -65,7 +65,7 @@ Entry *get(Database &database, std::string &key) {
 void remove(Database &database, std::string &key) {
     for (int i = 0; i < database.index; i++) {
         if (database.entrys[i]->key == key) {
-            delete &database.entrys[i];
+            delete database.entrys[i];
             database.entrys[i] = database.entrys[i+1];
             database.index--;
             

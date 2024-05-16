@@ -7,9 +7,10 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${fileDirname}\\*.cpp",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "-Werror",
+                "${fileDirname}\\run.exe"
             ],
             "options": {
                 "cwd": "c:\\mingw64\\bin"
