@@ -41,6 +41,7 @@ m, n = map(int, input().split())
 
 arr_dfs = []
 arr_bfs = []
+visite = [[0 for _ in range(m)] for _ in range(n)]
 
 for _n in range(n):
     dump = list(map(int, input().split()))
@@ -51,8 +52,39 @@ for _n in range(n):
             queue.append([_m, _n])
 
 # deep 
-def dfs(data):
-    pass
+def dfs():
+    while True:
+        if len(queue) == 0:
+            print(0)
+            return
+        else:
+            y, x = queue.pop()
+            for dx, dy in dxy:
+                if 0 <= x+dx < m and 0 <= y + dy < n:
+                    if arr_dfs[y+dy][x+dx] == 0:
+                        arr_dfs[y+dy][x+dx] = 1
+                        queue.append([y+dy, x+dx])
+                    elif arr_dfs[y+dy][x+dx] == 3:
+                        print(1)
+                        return
+
+
+def re_dfs(pos_x, pos_y):
+    if not (0 <= pos_x < m and 0 <= pos_y < n):
+        return 0
+    elif arr_dfs[pos_y][pos_x] == 3:
+        print(1)
+        return 1
+    elif arr_dfs[pos_y][pos_x] == -1:
+        return 0
+    elif visite[pos_y][pos_x] == 1:
+        return 0
+    visite[pos_y][pos_x] = 1
+    # if arr_dfs[pos_x][pos_x] == 0:
+    if not (re_dfs(pos_x + 1, pos_y) or re_dfs(pos_x - 1, pos_y) or re_dfs(pos_x, pos_y + 1) or re_dfs(pos_x, pos_y - 1)):
+        print(-1)
+    
+
 
 
 def bfs():
@@ -61,9 +93,8 @@ def bfs():
             print(0)
             return
         else:
-            x, y = queue.popleft()
+            y, x = queue.popleft()
             for dx, dy in dxy:
-                # print(y+dy, x+dx)
                 if 0 <= x+dx < m and 0 <= y+dy < n:
                     if arr_bfs[y+dy][x+dx] == 0:
                         arr_bfs[y+dy][x+dx] = 1
@@ -74,7 +105,8 @@ def bfs():
 
 
 if __name__ == "__main__":
-    bfs()
-    for _n in range(n):
-        print(*arr_bfs[_n])
+    x, y = queue.pop()
+    re_dfs(x, y)
+    # for _n in range(n):
+    #     print(*arr_bfs[_n])
 
