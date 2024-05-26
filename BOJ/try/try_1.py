@@ -73,16 +73,16 @@ def re_dfs(pos_x, pos_y):
     if not (0 <= pos_x < m and 0 <= pos_y < n):
         return 0
     elif arr_dfs[pos_y][pos_x] == 3:
-        print(1)
         return 1
-    elif arr_dfs[pos_y][pos_x] == -1:
+    elif arr_dfs[pos_y][pos_x] == -1 or visite[pos_y][pos_x] == 1:
         return 0
-    elif visite[pos_y][pos_x] == 1:
-        return 0
+    
     visite[pos_y][pos_x] = 1
     # if arr_dfs[pos_x][pos_x] == 0:
-    if not (re_dfs(pos_x + 1, pos_y) or re_dfs(pos_x - 1, pos_y) or re_dfs(pos_x, pos_y + 1) or re_dfs(pos_x, pos_y - 1)):
-        print(-1)
+    if (re_dfs(pos_x + 1, pos_y) or re_dfs(pos_x - 1, pos_y) or re_dfs(pos_x, pos_y + 1) or re_dfs(pos_x, pos_y - 1)):
+        return 1
+    else:
+        return 0
     
 
 
@@ -106,7 +106,10 @@ def bfs():
 
 if __name__ == "__main__":
     x, y = queue.pop()
-    re_dfs(x, y)
+    if re_dfs(x, y) == 1:
+        print(1)
+    else:
+        print(-1)
     # for _n in range(n):
     #     print(*arr_bfs[_n])
 
